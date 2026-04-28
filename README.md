@@ -86,4 +86,4 @@ This project is built using high-quality open-source resources and official Goog
 
 ---
 
-*Built with ❤️ for the 2026 Google Solution Challenge.*
+*Built for the 2026 Google Solution Challenge.*
