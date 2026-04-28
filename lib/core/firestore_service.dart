@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/saved_session.dart';
+import '../models/user_profile.dart';
 
 class FirestoreService {
   static final FirestoreService _instance = FirestoreService._internal();
