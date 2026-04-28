@@ -1,0 +1,15 @@
+.env
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+ios/.generated/
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+android/app/google-services.json
+lib/generated_plugin_registrant.dart
+*.log
+*.lock

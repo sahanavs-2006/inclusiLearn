@@ -1,0 +1,29 @@
+name: inclusilearn
+description: "Multimodal Adaptive AI Tutor for Inclusive Education"
+publish_to: 'none'
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'     # ← This line is required
+
+dependencies:
+  flutter:
+    sdk: flutter
+  firebase_core: ^4.7.0
+  cloud_firestore: ^6.3.0
+  firebase_storage: ^13.3.0
+  image_picker: ^1.2.1
+  camera: ^0.12.0+1
+  google_fonts: ^8.1.0
+  provider: ^6.1.5+1
+  flutter_dotenv: ^6.0.1
+  firebase_auth: ^6.4.0
+  flutter_tts: ^4.2.5
+  flutter_markdown_plus: ^1.0.7
+  firebase_ai: ^3.11.0
+  speech_to_text: ^7.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - .env
+    - assets/
