@@ -868,54 +868,55 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       child: SafeArea(
-        top: false, // Only focus on the bottom area
+        top: false,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.add_a_photo_rounded, color: Colors.indigo),
-              onPressed: _isLoading ? null : _pickImage,
-              tooltip: 'Upload Image',
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: _textController,
-                decoration: InputDecoration(
-                  hintText: 'Ask a question...',
-                  hintStyle: GoogleFonts.outfit(color: Colors.grey.shade400),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                onSubmitted: (_) => _sendTextOnly(),
+            children: [
+              IconButton(
+                icon: const Icon(Icons.add_a_photo_rounded, color: Colors.indigo),
+                onPressed: _isLoading ? null : _pickImage,
+                tooltip: 'Upload Image',
               ),
-            ),
-            const SizedBox(width: 8),
-            ValueListenableBuilder<TextEditingValue>(
-              valueListenable: _textController,
-              builder: (context, value, child) {
-                return CircleAvatar(
-                  backgroundColor: value.text.isNotEmpty ? Colors.indigo : Colors.grey.shade200,
-                  child: IconButton(
-                    icon: Icon(
-                      _isListening ? Icons.mic_rounded : Icons.send_rounded, 
-                      color: value.text.isNotEmpty || _isListening ? Colors.white : Colors.grey,
-                      size: 20,
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _textController,
+                  decoration: InputDecoration(
+                    hintText: 'Ask a question...',
+                    hintStyle: GoogleFonts.outfit(color: Colors.grey.shade400),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide.none,
                     ),
-                    onPressed: _isListening 
-                      ? _listen 
-                      : (value.text.isNotEmpty && !_isLoading ? _sendTextOnly : _listen),
                   ),
-                );
-              },
-            ),
-          ],
+                  onSubmitted: (_) => _sendTextOnly(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _textController,
+                builder: (context, value, child) {
+                  return CircleAvatar(
+                    backgroundColor: value.text.isNotEmpty ? Colors.indigo : Colors.grey.shade200,
+                    child: IconButton(
+                      icon: Icon(
+                        _isListening ? Icons.mic_rounded : Icons.send_rounded,
+                        color: value.text.isNotEmpty || _isListening ? Colors.white : Colors.grey,
+                        size: 20,
+                      ),
+                      onPressed: _isListening
+                          ? _listen
+                          : (value.text.isNotEmpty && !_isLoading ? _sendTextOnly : _listen),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
