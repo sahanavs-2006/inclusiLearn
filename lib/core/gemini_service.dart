@@ -35,17 +35,8 @@ class GeminiService {
 
   String _handleError(dynamic e) {
     final errorStr = e.toString().toLowerCase();
-    
-    // DEMO FALLBACK: If quota is hit during recording, provide a high-quality mock response
     if (errorStr.contains('quota') || errorStr.contains('429')) {
-      return """Certainly! Let's break down this concept. 
-
-### **Key Concept: Adaptive Learning**
-Adaptive learning uses AI to change the way information is presented based on your needs. For example:
-*   **Dyslexia Mode:** Uses shorter sentences and bold terms.
-*   **Simplified Mode:** Uses easy-to-understand analogies.
-
-Keep up the great work! You're earning XP and growing your Study Buddy! 🚀""";
+      return "⚠️ **AI is taking a break!**\n\nThe free tier quota has been reached. Please wait a minute or two and try again. Each student gets a limited number of requests per minute.";
     }
 
     if (errorStr.contains('api_key') || errorStr.contains('invalid')) {
