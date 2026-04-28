@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'core/gemini_service.dart';
@@ -76,6 +77,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
     _setupTts();
     _initSpeech();
+    _signInAnonymously();
+  }
+
+  Future<void> _signInAnonymously() async {
+    try {
+      final userCredential = await FirebaseAuth.instance.signInAnonymously();
+      final user = userCredential.user;
+      if (user != null) {
+        // Load profile from Firestore
+        final cloudProfile = await FirestoreService().getProfile(user.uid);
+        if (mounted) {
+          setState(() {
+            if (cloudProfile != null) {
+              _profile = cloudProfile;
+            }
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Auth Error: $e");
+    }
   }
 
   void _initSpeech() async {
@@ -139,7 +161,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _saveSession() async {
     if (_isSaved) return;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please wait for authentication...'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
     final session = SavedSession(
+      userId: user.uid,
       subject: _profile.subject,
       grade: _profile.grade,
       learningMode: _profile.learningMode,
@@ -147,11 +178,15 @@ class _HomeScreenState extends State<HomeScreen> {
       savedAt: DateTime.now(),
     );
     await FirestoreService().saveSession(session);
+    
+    // Reward points for saving to library
+    _updateProgress(pointsToAdd: 20);
+
     if (mounted) {
       setState(() => _isSaved = true);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('📚 Saved to your Library!'),
+          content: Text('📚 Saved to library! +20 Points!'),
           backgroundColor: Colors.teal,
           duration: Duration(seconds: 2),
         ),
@@ -159,15 +194,52 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _updateProgress({int pointsToAdd = 0, String? newBadge}) {
+    final now = DateTime.now();
+    final today = "${now.year}-${now.month}-${now.day}";
+    
+    int newStreak = _profile.streak;
+    if (_profile.lastActiveDate != today) {
+      newStreak++;
+    }
+
+    List<String> newBadges = List.from(_profile.badges);
+    if (newBadge != null && !newBadges.contains(newBadge)) {
+      newBadges.add(newBadge);
+    }
+
+    final updatedProfile = _profile.copyWith(
+      points: _profile.points + pointsToAdd,
+      streak: newStreak,
+      lastActiveDate: today,
+      badges: newBadges,
+    );
+
+    setState(() => _profile = updatedProfile);
+    
+    // Save to Firestore
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      FirestoreService().saveProfile(user.uid, updatedProfile);
+    }
+  }
+
   Future<void> _openProfile() async {
     final updatedProfile = await Navigator.push<UserProfile>(
       context,
       MaterialPageRoute(
-        builder: (_) => ProfileScreen(currentProfile: _profile),
+        builder: (context) => ProfileScreen(currentProfile: _profile),
       ),
     );
+
     if (updatedProfile != null) {
       setState(() => _profile = updatedProfile);
+      
+      // Save to Firestore
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await FirestoreService().saveProfile(user.uid, updatedProfile);
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -237,6 +309,8 @@ class _HomeScreenState extends State<HomeScreen> {
       _geminiService.startNewChat(_profile.toPromptString());
       _messages = [{'role': 'model', 'text': result}];
     });
+
+    _updateProgress(pointsToAdd: 50); // Points for analysis
   }
 
   Future<void> _sendTextOnly() async {
@@ -317,11 +391,19 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     } else {
       // Quiz finished
+      int bonusPoints = _score * 20;
+      String? badge;
+      if (_score == _quiz.length && _score > 0) {
+        badge = _profile.subject == 'Mathematics' ? 'Math Master' : 'Science Explorer';
+      }
+
+      _updateProgress(pointsToAdd: bonusPoints, newBadge: badge);
+
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
           title: Text("Quiz Complete!", style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-          content: Text("You scored $_score out of ${_quiz.length}!", style: GoogleFonts.outfit()),
+          content: Text("You scored $_score out of ${_quiz.length}!\nEarned $bonusPoints Points! ${badge != null ? '\n\n🏆 New Badge: $badge' : ''}", style: GoogleFonts.outfit()),
           actions: [
             TextButton(
               onPressed: () {
@@ -458,24 +540,12 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          const SizedBox(height: 40),
-          // Logo
-          Hero(
-            tag: 'logo',
-            child: Container(
-              height: 100,
-              width: 100,
-              child: Image.asset(
-                'assets/logo.png',
-                color: Colors.indigo.shade300,
-                colorBlendMode: BlendMode.srcIn,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
+          _buildGamificationHeader(),
+          const SizedBox(height: 20),
+          _buildStudyBuddyCard(),
+          const SizedBox(height: 30),
           Text(
-            "Welcome back!",
+            "Welcome, ${_profile.name}!",
             style: GoogleFonts.outfit(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.indigo.shade900),
           ),
           const SizedBox(height: 8),
@@ -510,6 +580,16 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 40),
           // SDG Branding
+          Text(
+            "SDGs",
+            style: GoogleFonts.outfit(
+              fontSize: 14, 
+              fontWeight: FontWeight.bold, 
+              color: Colors.grey.shade700,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -741,6 +821,137 @@ class _HomeScreenState extends State<HomeScreen> {
           _isQuizLoading ? "Preparing Quiz..." : "Test My Knowledge!",
           style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16),
         ),
+      ),
+    );
+  }
+
+  Widget _buildGamificationHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Streak
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.orange.shade100,
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.fireplace_rounded, color: Colors.orange, size: 20),
+              const SizedBox(width: 4),
+              Text(
+                "${_profile.streak} Day Streak",
+                style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.orange.shade900),
+              ),
+            ],
+          ),
+        ),
+        // Points
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.indigo.shade50,
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.stars_rounded, color: Colors.indigo, size: 20),
+              const SizedBox(width: 4),
+              Text(
+                "${_profile.points} XP",
+                style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.indigo.shade900),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStudyBuddyCard() {
+    final level = _profile.buddyLevel;
+    final status = _profile.buddyStatus;
+    
+    IconData buddyIcon = switch(level) {
+      4 => Icons.psychology_rounded,
+      3 => Icons.auto_awesome_rounded,
+      2 => Icons.grass_rounded,
+      _ => Icons.egg_rounded,
+    };
+
+    Color buddyColor = switch(level) {
+      4 => Colors.purple,
+      3 => Colors.blue,
+      2 => Colors.green,
+      _ => Colors.brown,
+    };
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [buddyColor.withOpacity(0.1), buddyColor.withOpacity(0.05)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: buddyColor.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                height: 80,
+                width: 80,
+                child: CircularProgressIndicator(
+                  value: (_profile.points % 500) / 500,
+                  strokeWidth: 6,
+                  color: buddyColor,
+                  backgroundColor: buddyColor.withOpacity(0.1),
+                ),
+              ),
+              Icon(buddyIcon, size: 40, color: buddyColor),
+            ],
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "AI Study Buddy",
+                  style: GoogleFonts.outfit(fontSize: 14, color: Colors.grey.shade600),
+                ),
+                Text(
+                  status,
+                  style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: buddyColor),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Level $level Buddy • Earn ${(level * 500) - _profile.points} more XP to grow!",
+                  style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey.shade500),
+                ),
+                if (_profile.badges.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 6,
+                    children: _profile.badges.map((b) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade100,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text("🏆 $b", style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.amber.shade900)),
+                    )).toList(),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

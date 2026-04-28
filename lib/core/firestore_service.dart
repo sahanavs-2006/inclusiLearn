@@ -14,9 +14,29 @@ class FirestoreService {
     return doc.id;
   }
 
-  /// Stream of all sessions, newest first
-  Stream<List<SavedSession>> sessionsStream() {
-    return _collection
+  final _usersCollection = FirebaseFirestore.instance.collection('users');
+
+  /// Save or update a user's profile
+  Future<void> saveProfile(String userId, UserProfile profile) async {
+    await _usersCollection.doc(userId).set(profile.toMap(), SetOptions(merge: true));
+  }
+
+  /// Get a user's profile from Firestore
+  Future<UserProfile?> getProfile(String userId) async {
+    final doc = await _usersCollection.doc(userId).get();
+    if (doc.exists && doc.data() != null) {
+      return UserProfile.fromMap(doc.data()!);
+    }
+    return null;
+  }
+
+  /// Stream of sessions, filtered by userId if provided, newest first
+  Stream<List<SavedSession>> sessionsStream({String? userId}) {
+    Query query = _collection;
+    if (userId != null && userId.isNotEmpty) {
+      query = query.where('userId', isEqualTo: userId);
+    }
+    return query
         .orderBy('savedAt', descending: true)
         .snapshots()
         .map((snap) => snap.docs.map(SavedSession.fromDoc).toList());

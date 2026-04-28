@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/saved_session.dart';
 import '../../core/firestore_service.dart';
 import '../teacher/teacher_dashboard_screen.dart';
@@ -23,17 +24,14 @@ class LibraryScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.analytics_outlined),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const TeacherDashboardScreen()),
-            ),
+            onPressed: () => _showTeacherPasscodeDialog(context),
             tooltip: 'Teacher Insights',
           ),
           const SizedBox(width: 8),
         ],
       ),
       body: StreamBuilder<List<SavedSession>>(
-        stream: FirestoreService().sessionsStream(),
+        stream: FirestoreService().sessionsStream(userId: FirebaseAuth.instance.currentUser?.uid ?? ''),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -61,6 +59,52 @@ class LibraryScreen extends StatelessWidget {
             },
           );
         },
+      ),
+    );
+  }
+
+  void _showTeacherPasscodeDialog(BuildContext context) {
+    final TextEditingController codeController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Teacher Verification', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Please enter your 4-digit teacher access code to view classroom analytics.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: codeController,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Access Code',
+                hintText: 'Enter code',
+              ),
+              keyboardType: TextInputType.number,
+              obscureText: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              if (codeController.text == '2026') {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const TeacherDashboardScreen()),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Incorrect access code!'), backgroundColor: Colors.red),
+                );
+              }
+            },
+            child: const Text('Verify'),
+          ),
+        ],
       ),
     );
   }

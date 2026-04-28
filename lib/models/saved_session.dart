@@ -7,10 +7,12 @@ class SavedSession {
   final String learningMode;
   final String response;
   final DateTime savedAt;
+  final String userId;
   final bool? wasHelpful; // Added for Solution Challenge Impact Tracking
 
   SavedSession({
     this.id,
+    required this.userId,
     required this.subject,
     required this.grade,
     required this.learningMode,
@@ -20,6 +22,7 @@ class SavedSession {
   });
 
   Map<String, dynamic> toMap() => {
+        'userId': userId,
         'subject': subject,
         'grade': grade,
         'learningMode': learningMode,
@@ -32,6 +35,7 @@ class SavedSession {
     final data = doc.data() as Map<String, dynamic>;
     return SavedSession(
       id: doc.id,
+      userId: data['userId'] ?? 'unknown',
       subject: data['subject'] ?? '',
       grade: data['grade'] ?? '',
       learningMode: data['learningMode'] ?? '',

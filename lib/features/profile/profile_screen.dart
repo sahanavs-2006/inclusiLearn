@@ -15,6 +15,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late String _grade;
   late String _learningMode;
   late String _language;
+  late TextEditingController _nameController;
 
   final List<String> _subjects = [
     'Mathematics',
@@ -60,10 +61,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _nameController = TextEditingController(text: widget.currentProfile.name);
     _subject = widget.currentProfile.subject;
     _grade = widget.currentProfile.grade;
     _learningMode = widget.currentProfile.learningMode;
     _language = widget.currentProfile.language;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
   }
 
   @override
@@ -115,6 +123,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
 
             const SizedBox(height: 28),
+
+            // Name
+            _SectionLabel(label: 'Full Name', icon: Icons.person_outline),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.indigo.shade100),
+              ),
+              child: TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  hintText: 'Enter your name',
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
 
             // Subject
             _SectionLabel(label: 'Subject', icon: Icons.book_outlined),
@@ -206,6 +235,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _saveProfile() {
     final profile = UserProfile(
+      name: _nameController.text.trim().isEmpty ? 'Student' : _nameController.text.trim(),
       subject: _subject,
       grade: _grade,
       learningMode: _learningMode,

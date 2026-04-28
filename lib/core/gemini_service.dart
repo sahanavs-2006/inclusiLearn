@@ -33,6 +33,18 @@ class GeminiService {
     ]);
   }
 
+  String _handleError(dynamic e) {
+    final errorStr = e.toString().toLowerCase();
+    if (errorStr.contains('quota') || errorStr.contains('429')) {
+      return "⚠️ **AI is taking a break!**\n\nThe free tier quota has been reached. Please wait a minute or two and try again. Each student gets a limited number of requests per minute.";
+    } else if (errorStr.contains('api_key') || errorStr.contains('invalid')) {
+      return "❌ **API Key Error**\n\nPlease check your .env file and ensure your GEMINI_API_KEY is correct and active.";
+    } else if (errorStr.contains('connection') || errorStr.contains('socket')) {
+      return "🌐 **Connection Issue**\n\nPlease check your internet connection and try again.";
+    }
+    return "😔 **Something went wrong**\n\nI couldn't process that right now. Please try again in a moment.";
+  }
+
   Future<String> askFollowUp(String message) async {
     if (_chatSession == null) {
       return "Please start a session first by uploading a problem.";
@@ -41,7 +53,7 @@ class GeminiService {
       final response = await _chatSession!.sendMessage(Content.text(message));
       return response.text ?? "I'm sorry, I couldn't process that. Could you rephrase?";
     } catch (e) {
-      return "Error: $e";
+      return _handleError(e);
     }
   }
 
@@ -92,9 +104,9 @@ Response should be in Markdown.
 
       final response = await _textModel.generateContent(content);
 
-      return response.text ?? "Sorry, I couldn't process that image. Please try again with a clearer photo of a math or science question.";
+      return response.text ?? "Sorry, I couldn't process that image. Please try again with a clearer photo.";
     } catch (e) {
-      return "Error: $e\n\nPlease check your internet connection.";
+      return _handleError(e);
     }
   }
 
@@ -146,7 +158,7 @@ Response should be in Markdown, professional but encouraging.
       final response = await _textModel.generateContent([Content.text(prompt)]);
       return response.text ?? "No trends identified yet. Keep teaching!";
     } catch (e) {
-      return "Error analyzing trends: $e";
+      return _handleError(e);
     }
   }
 }
