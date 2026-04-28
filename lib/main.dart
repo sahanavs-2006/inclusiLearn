@@ -21,25 +21,154 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env"); // Loads the key securely
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const MyApp());
+  runApp(const InclusiLearnApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class InclusiLearnApp extends StatelessWidget {
+  const InclusiLearnApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'InclusiLearn',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.indigo, useMaterial3: true),
-      home: const HomeScreen(),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
+        useMaterial3: true,
+        textTheme: GoogleFonts.outfitTextTheme(),
+      ),
+      home: const LoginScreen(),
+    );
+  }
+}
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController _nameController = TextEditingController();
+  bool _isLoading = false;
+
+  Future<void> _login() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      // 1. Ensure Firebase Auth is active
+      if (FirebaseAuth.instance.currentUser == null) {
+        await FirebaseAuth.instance.signInAnonymously();
+      }
+
+      // 2. Fetch profile by Name (using name as the primary key for simple per-name isolation)
+      final profile = await FirestoreService().getProfile(name);
+      
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => HomeScreen(
+              initialProfile: profile ?? UserProfile.defaults.copyWith(name: name),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Login error: $e")),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.indigo.shade900, Colors.indigo.shade700],
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.school_rounded, size: 80, color: Colors.white),
+                const SizedBox(height: 24),
+                Text(
+                  "InclusiLearn",
+                  style: GoogleFonts.outfit(fontSize: 42, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                Text(
+                  "Adaptive AI Tutoring for Everyone",
+                  style: GoogleFonts.outfit(fontSize: 16, color: Colors.indigo.shade100),
+                ),
+                const SizedBox(height: 60),
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        "Student Login",
+                        style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.indigo.shade900),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Enter your name to access your personal library",
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.outfit(fontSize: 14, color: Colors.grey.shade600),
+                      ),
+                      const SizedBox(height: 32),
+                      TextField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          labelText: "Your Full Name",
+                          prefixIcon: const Icon(Icons.person_rounded),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: _isLoading ? null : _login,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.indigo,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 55),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        ),
+                        child: _isLoading 
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text("Start Learning", style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final UserProfile initialProfile;
+  const HomeScreen({super.key, required this.initialProfile});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -51,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _response = "Upload a photo of a math problem or diagram";
   List<Map<String, String>> _messages = []; // [{role: 'user'|'model', text: '...'}]
   bool _isLoading = false;
-  UserProfile _profile = UserProfile.defaults;
+  late UserProfile _profile;
   bool _isSaved = false;
 
   late final GeminiService _geminiService;
@@ -73,31 +202,17 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _profile = widget.initialProfile;
     _geminiService = GeminiService();
 
     _setupTts();
     _initSpeech();
-    _signInAnonymously();
   }
 
-  Future<void> _signInAnonymously() async {
-    try {
-      final userCredential = await FirebaseAuth.instance.signInAnonymously();
-      final user = userCredential.user;
-      if (user != null) {
-        // Load profile from Firestore
-        final cloudProfile = await FirestoreService().getProfile(user.uid);
-        if (mounted) {
-          setState(() {
-            if (cloudProfile != null) {
-              _profile = cloudProfile;
-            }
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint("Auth Error: $e");
-    }
+  void _logout() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
   }
 
   void _initSpeech() async {
@@ -161,16 +276,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _saveSession() async {
     if (_isSaved) return;
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please wait for authentication...'), backgroundColor: Colors.orange),
-      );
-      return;
-    }
-
+    
     final session = SavedSession(
-      userId: user.uid,
+      userId: _profile.name, // Link to Name for isolation
       subject: _profile.subject,
       grade: _profile.grade,
       learningMode: _profile.learningMode,
@@ -217,35 +325,35 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() => _profile = updatedProfile);
     
-    // Save to Firestore
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      FirestoreService().saveProfile(user.uid, updatedProfile);
-    }
+    // Save to Firestore (using name as ID)
+    FirestoreService().saveProfile(_profile.name, updatedProfile);
   }
 
   Future<void> _openProfile() async {
     final updatedProfile = await Navigator.push<UserProfile>(
       context,
       MaterialPageRoute(
-        builder: (context) => ProfileScreen(currentProfile: _profile),
+        builder: (context) => ProfileScreen(
+          currentProfile: _profile,
+          onLogout: _logout,
+        ),
       ),
     );
 
     if (updatedProfile != null) {
       setState(() => _profile = updatedProfile);
       
-      // Save to Firestore
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        await FirestoreService().saveProfile(user.uid, updatedProfile);
-      }
+      // Save to Firestore (using name as ID)
+      await FirestoreService().saveProfile(_profile.name, updatedProfile);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              '✅ Profile saved! ${updatedProfile.subject} · ${updatedProfile.grade} · ${updatedProfile.learningMode}'),
+            "Profile saved for ${_profile.name}!",
+            style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
           backgroundColor: Colors.indigo,
-          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
     }
@@ -461,6 +569,11 @@ class _HomeScreenState extends State<HomeScreen> {
               MaterialPageRoute(builder: (_) => const LibraryScreen()),
             ),
             tooltip: 'My Library',
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Colors.indigo),
+            onPressed: _logout,
+            tooltip: 'Logout',
           ),
           IconButton(
             icon: Stack(

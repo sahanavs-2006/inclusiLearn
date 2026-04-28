@@ -3,8 +3,9 @@ import '../../models/user_profile.dart';
 
 class ProfileScreen extends StatefulWidget {
   final UserProfile currentProfile;
+  final VoidCallback onLogout;
 
-  const ProfileScreen({super.key, required this.currentProfile});
+  const ProfileScreen({super.key, required this.currentProfile, required this.onLogout});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -83,6 +84,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout_rounded),
+            onPressed: widget.onLogout,
+            tooltip: 'Logout',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -101,21 +109,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.person_pin, size: 36, color: Colors.white),
-                  SizedBox(height: 8),
+                  const Icon(Icons.person_pin, size: 36, color: Colors.white),
+                  const SizedBox(height: 8),
                   Text(
-                    'Personalize Your Experience',
-                    style: TextStyle(
+                    'Profile: ${widget.currentProfile.name}',
+                    style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Colors.white),
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    'InclusiLearn adapts every explanation to your needs.',
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Your preferences and library are locked to this name.',
                     style: TextStyle(fontSize: 13, color: Colors.white70),
                   ),
                 ],
@@ -124,22 +132,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 28),
 
-            // Name
-            _SectionLabel(label: 'Full Name', icon: Icons.person_outline),
+            // Name (Read Only)
+            _SectionLabel(label: 'Full Name (Account ID)', icon: Icons.lock_outline),
             const SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Colors.grey.shade200,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.indigo.shade100),
+                border: Border.all(color: Colors.grey.shade300),
               ),
-              child: TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  hintText: 'Enter your name',
-                ),
+              child: Text(
+                widget.currentProfile.name,
+                style: GoogleFonts.outfit(fontSize: 16, color: Colors.grey.shade700, fontWeight: FontWeight.bold),
               ),
             ),
 
@@ -221,12 +227,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       borderRadius: BorderRadius.circular(12)),
                 ),
                 icon: const Icon(Icons.check_circle_outline),
-                label: const Text('Save Profile',
+                label: const Text('Save Changes',
                     style:
                         TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
               ),
             ),
             const SizedBox(height: 20),
+            
+            // Logout Button
+            Center(
+              child: TextButton.icon(
+                onPressed: widget.onLogout,
+                icon: const Icon(Icons.logout, color: Colors.redAccent),
+                label: const Text("Switch Student / Logout", style: TextStyle(color: Colors.redAccent)),
+              ),
+            ),
+            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -234,8 +250,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _saveProfile() {
-    final profile = UserProfile(
-      name: _nameController.text.trim().isEmpty ? 'Student' : _nameController.text.trim(),
+    final profile = widget.currentProfile.copyWith(
       subject: _subject,
       grade: _grade,
       learningMode: _learningMode,
