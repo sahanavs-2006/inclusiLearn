@@ -857,7 +857,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildBottomInput() {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -869,7 +868,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       child: SafeArea(
-        child: Row(
+        top: false, // Only focus on the bottom area
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
           children: [
             IconButton(
               icon: const Icon(Icons.add_a_photo_rounded, color: Colors.indigo),
