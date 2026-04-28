@@ -75,6 +75,15 @@ InclusiLearn includes a dedicated **Teacher Dashboard** that uses AI to aggregat
 - **Goal 4 (Quality Education)**: Ensuring inclusive and equitable quality education and promoting lifelong learning opportunities for all.
 - **Goal 10 (Reduced Inequalities)**: Reducing inequalities by providing specialized tools for students with disabilities and regional language support.
 
+## 📜 Credits & Resources
+This project is built using high-quality open-source resources and official Google technologies:
+- **UI Framework**: [Flutter](https://flutter.dev) (Google)
+- **Backend & AI SDK**: [Firebase](https://firebase.google.com) & [Firebase AI SDK](https://firebase.google.com/docs/ai) (Google)
+- **AI Models**: [Gemini 2.5 Flash & Flash-Lite](https://deepmind.google/technologies/gemini/) (Google DeepMind)
+- **Icons**: [Material Symbols - Auto Stories Icon](https://fonts.google.com/icons) (Google). Used under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+- **Typography**: [Google Fonts - Outfit](https://fonts.google.com/specimen/Outfit) (Google).
+- **Packages**: `flutter_dotenv`, `flutter_markdown_plus`, `flutter_tts`, `speech_to_text`, `image_picker`.
+
 ---
 
 *Built with ❤️ for the 2026 Google Solution Challenge.*
