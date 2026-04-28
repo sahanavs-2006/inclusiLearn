@@ -463,16 +463,12 @@ class _HomeScreenState extends State<HomeScreen> {
           Hero(
             tag: 'logo',
             child: Container(
-              height: 120,
-              width: 180, // Slightly wider to fit the full silhouette
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(color: Colors.indigo.withOpacity(0.1), blurRadius: 30, offset: const Offset(0, 10)),
-                ],
-              ),
+              height: 100,
+              width: 100,
               child: Image.asset(
                 'assets/logo.png',
+                color: Colors.indigo.shade300,
+                colorBlendMode: BlendMode.srcIn,
                 fit: BoxFit.contain,
               ),
             ),
