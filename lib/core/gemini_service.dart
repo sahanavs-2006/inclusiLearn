@@ -35,17 +35,8 @@ class GeminiService {
 
   String _handleError(dynamic e) {
     final errorStr = e.toString().toLowerCase();
-    
-    // SMART FALLBACK: If quota is reached, provide a realistic, profile-aware response immediately
     if (errorStr.contains('quota') || errorStr.contains('429')) {
-      return """Certainly! Let's solve this. 
-
-### **Step-by-Step Explanation**
-1.  **Analyze**: First, we identify the key components of the problem. 
-2.  **Process**: We apply the relevant formula or concept to the data.
-3.  **Result**: We arrive at the solution by simplifying the steps.
-
-**Pro-Tip:** Remember to double-check your calculations! You're doing great—keep going! 🚀""";
+      return "⚠️ **AI is taking a break!**\n\nThe free tier quota has been reached. Please wait a minute or two and try again. Each student gets a limited number of requests per minute.";
     }
 
     if (errorStr.contains('api_key') || errorStr.contains('invalid')) {
