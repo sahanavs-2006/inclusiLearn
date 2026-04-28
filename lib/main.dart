@@ -711,6 +711,9 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildSDGBadge("10", "Reduced Inequalities", Colors.pink.shade600),
             ],
           ),
+          const SizedBox(height: 8),
+          Text(
+            "Built for Google Solution Challenge 2026",
             style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey.shade400, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 100),
