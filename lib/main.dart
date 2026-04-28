@@ -60,12 +60,17 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // 1. Ensure Firebase Auth is active
-      if (FirebaseAuth.instance.currentUser == null) {
-        await FirebaseAuth.instance.signInAnonymously();
+      // Try Anonymous Auth, but don't block login if it's not configured
+      try {
+        if (FirebaseAuth.instance.currentUser == null) {
+          await FirebaseAuth.instance.signInAnonymously();
+        }
+      } catch (authError) {
+        debugPrint("Auth skipped/failed: $authError");
+        // We continue because we use 'name' as the primary key for the profile
       }
 
-      // 2. Fetch profile by Name (using name as the primary key for simple per-name isolation)
+      // 2. Fetch profile by Name
       final profile = await FirestoreService().getProfile(name);
       
       if (mounted) {
