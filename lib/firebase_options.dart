@@ -3,6 +3,7 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
@@ -40,8 +41,8 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCd1Ntz9DaVSck8Y0hl9i5rcr2sJAXjvBM',
+  static final FirebaseOptions web = FirebaseOptions(
+    apiKey: dotenv.env['FIREBASE_API_KEY_WEB'] ?? '',
     appId: '1:520668169266:web:0e9a6b1cc18275031ba82b',
     messagingSenderId: '520668169266',
     projectId: 'inclusilearn-f8863',
@@ -49,16 +50,16 @@ class DefaultFirebaseOptions {
     storageBucket: 'inclusilearn-f8863.firebasestorage.app',
   );
 
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBDqEEUQk8DsU9XQ-Qj76kZ6D9T34kbjmY',
+  static final FirebaseOptions android = FirebaseOptions(
+    apiKey: dotenv.env['FIREBASE_API_KEY_ANDROID'] ?? '',
     appId: '1:520668169266:android:857b6ddab310b7341ba82b',
     messagingSenderId: '520668169266',
     projectId: 'inclusilearn-f8863',
     storageBucket: 'inclusilearn-f8863.firebasestorage.app',
   );
 
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyB7X1uT3rKSXXwz_kOZPQNBGwTK-Ffj5Dk',
+  static final FirebaseOptions ios = FirebaseOptions(
+    apiKey: dotenv.env['FIREBASE_API_KEY_IOS'] ?? '',
     appId: '1:520668169266:ios:6071711c5bcb14591ba82b',
     messagingSenderId: '520668169266',
     projectId: 'inclusilearn-f8863',
@@ -66,8 +67,8 @@ class DefaultFirebaseOptions {
     iosBundleId: 'com.example.inclusilearn',
   );
 
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyB7X1uT3rKSXXwz_kOZPQNBGwTK-Ffj5Dk',
+  static final FirebaseOptions macos = FirebaseOptions(
+    apiKey: dotenv.env['FIREBASE_API_KEY_IOS'] ?? '',
     appId: '1:520668169266:ios:6071711c5bcb14591ba82b',
     messagingSenderId: '520668169266',
     projectId: 'inclusilearn-f8863',
@@ -75,8 +76,8 @@ class DefaultFirebaseOptions {
     iosBundleId: 'com.example.inclusilearn',
   );
 
-  static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyCd1Ntz9DaVSck8Y0hl9i5rcr2sJAXjvBM',
+  static final FirebaseOptions windows = FirebaseOptions(
+    apiKey: dotenv.env['FIREBASE_API_KEY_WEB'] ?? '',
     appId: '1:520668169266:web:674b34a4104c03fc1ba82b',
     messagingSenderId: '520668169266',
     projectId: 'inclusilearn-f8863',
